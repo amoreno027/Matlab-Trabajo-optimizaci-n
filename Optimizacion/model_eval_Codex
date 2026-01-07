@@ -1,0 +1,84 @@
+function eval_out = model_eval(x, data, grafica)
+    if nargin < 3
+        grafica = false;
+    end
+
+    eval_out = struct();
+    eval_out.valid = true;
+    eval_out.messages = {};
+
+    S = x(1);
+    b = x(2);
+    t_c = x(3);
+
+    if S <= 0 || b <= 0 || t_c <= 0
+        eval_out.valid = false;
+        eval_out.messages{end+1} = 'S, b, t/c deben ser positivos.';
+        eval_out = fill_invalid(eval_out);
+        return;
+    end
+
+    try
+        A = b^2 / S; % Alargamiento
+        c = S / b; % Cuerda del ala
+        W0 = data.m0 * data.g; % Peso vacío operativo sin ala
+        flecha_rad = deg2rad(data.flecha);
+
+        [c_am,Emax,CLopt,flecha_14_rad,flecha_12_rad,t_r] = VLM( ...
+            S, c, data.lambda, A, flecha_rad, data.CD0, grafica);
+        [Wi,Wf,V,Ww,Wmedio,Wfuel,Vfuel] = estructura( ...
+            data.lambda, b, t_c, S, A, data.g, data.rho, CLopt, ...
+            data.rho_fuel, data.rho_material, data.K_ala, data.eta_ult, ...
+            W0, flecha_14_rad, flecha_12_rad, c_am, t_r);
+        R = alcance(Emax, V, Wi, Wf, data.cT);
+    catch err
+        eval_out.valid = false;
+        eval_out.messages{end+1} = sprintf('Excepción en model_eval: %s', err.message);
+        eval_out = fill_invalid(eval_out);
+        return;
+    end
+
+    eval_out.S = S;
+    eval_out.b = b;
+    eval_out.t_c = t_c;
+    eval_out.A = A;
+    eval_out.c = c;
+    eval_out.CLopt = CLopt;
+    eval_out.Emax = Emax;
+    eval_out.V = V;
+    eval_out.Wi = Wi;
+    eval_out.Wf = Wf;
+    eval_out.Wm = Wmedio;
+    eval_out.Ws = Ww;
+    eval_out.Wfuel = Wfuel;
+    eval_out.Vfuel = Vfuel;
+    eval_out.Vusable = Vfuel;
+    eval_out.mcap = Wfuel / data.g;
+    eval_out.R = R;
+
+    if any(~isfinite([A, c, CLopt, V, Wi, Wf, Wmedio, Ww, Vfuel, Wfuel, R]))
+        eval_out.valid = false;
+        eval_out.messages{end+1} = 'NaN/Inf detectado en magnitudes del modelo.';
+        eval_out = fill_invalid(eval_out);
+    end
+end
+
+function eval_out = fill_invalid(eval_out)
+    eval_out.S = NaN;
+    eval_out.b = NaN;
+    eval_out.t_c = NaN;
+    eval_out.A = NaN;
+    eval_out.c = NaN;
+    eval_out.CLopt = NaN;
+    eval_out.Emax = NaN;
+    eval_out.V = NaN;
+    eval_out.Wi = NaN;
+    eval_out.Wf = NaN;
+    eval_out.Wm = NaN;
+    eval_out.Ws = NaN;
+    eval_out.Wfuel = NaN;
+    eval_out.Vfuel = NaN;
+    eval_out.Vusable = NaN;
+    eval_out.mcap = NaN;
+    eval_out.R = -Inf;
+end

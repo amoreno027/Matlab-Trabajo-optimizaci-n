@@ -1,0 +1,58 @@
+function [c, ceq] = nonlcon(x, data)
+    eval_out = model_eval(x, data, false);
+
+    if ~eval_out.valid
+        c = 1e6 * ones(5, 1);
+        ceq = 1e6 * ones(2, 1);
+        log_debug(data, c, ceq, 'Estado inválido en model_eval', eval_out.messages);
+        return;
+    end
+
+    S = eval_out.S;
+    b = eval_out.b;
+    t_c = eval_out.t_c;
+
+    c_raw = [
+        b - data.bmax;
+        t_c - data.t_c_max;
+        data.t_c_min - t_c;
+        -eval_out.Ws;
+        data.mfuel_req - eval_out.mcap;
+    ];
+
+    ceq_raw = [
+        0.5 * data.rho * eval_out.V^2 * S * eval_out.CLopt - eval_out.Wm;
+        eval_out.Vusable - (data.kint * data.eta_fill * t_c * S^2 / b);
+    ];
+
+    scaling_c = [
+        max(data.bmax, 1);
+        max(data.t_c_max, 1);
+        max(data.t_c_max, 1);
+        max(abs(eval_out.Ws), 1);
+        max(data.mfuel_req, 1);
+    ];
+    scaling_ceq = [
+        max(abs(eval_out.Wm), 1);
+        max(abs(eval_out.Vusable), 1);
+    ];
+
+    c = c_raw ./ scaling_c;
+    ceq = ceq_raw ./ scaling_ceq;
+
+    log_debug(data, c, ceq, 'Restricciones evaluadas', {});
+end
+
+function log_debug(data, c, ceq, header, messages)
+    if ~isfield(data, 'debug') || ~data.debug
+        return;
+    end
+
+    [max_c, idx_c] = max(c);
+    norm_ceq = norm(ceq);
+    fprintf('[nonlcon] %s\n', header);
+    fprintf('  max(c): %.3e (idx %d), norm(ceq): %.3e\n', max_c, idx_c, norm_ceq);
+    for k = 1:numel(messages)
+        fprintf('  note: %s\n', messages{k});
+    end
+end

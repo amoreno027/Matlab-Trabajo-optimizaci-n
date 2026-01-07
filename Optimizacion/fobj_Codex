@@ -1,0 +1,4 @@
+function f = fobj(x,grafica,data)
+    eval_out = model_eval(x, data, grafica);
+    f = -eval_out.R;
+end

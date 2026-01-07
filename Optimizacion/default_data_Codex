@@ -1,0 +1,36 @@
+function data = default_data()
+    % Unidades: rho [kg/m^3], V [m/s], S [m^2], b [m],
+    % pesos W* [N], masas m* [kg], volúmenes [m^3].
+    data.g = 9.81; % [m/s^2]
+    data.rho = 1.225; % [kg/m^3]
+
+    data.CD0 = 0.03; % Coeficiente de resistencia parásita
+    data.lambda = 0.5; % Estrechamiento
+
+    data.m0 = 20; % Masa en vacío (sin el ala) [kg]
+
+    data.cT = 1.5/3600; % Consumo específico del motor [s^-1]
+    data.rho_fuel = 800; % Densidad del combustible [kg/m^3]
+
+    data.rho_material = 2780; % Densidad del material de las alas [kg/m^3]
+    data.K_ala = 0.00125; % Factor de densidad del ala
+    data.eta_ult = 1.5*1.75; % Factor de carga último
+
+    data.flecha = 0; % [º]
+
+    % Restricciones explícitas
+    data.bmax = 6;
+    data.t_c_min = 0.1;
+    data.t_c_max = 0.25;
+
+    % Restricción de volumen de combustible usable
+    data.tau = 1;
+    data.kint = 0.54 * (1 + data.lambda * sqrt(data.tau) + data.lambda^2 * data.tau) ...
+        / (1 + data.lambda)^2;
+    data.eta_fill = 1.0;
+
+    % Requerimiento de combustible [kg] (ajustable)
+    data.mfuel_req = 0;
+
+    data.debug = false;
+end

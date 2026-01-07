@@ -1,0 +1,7 @@
+function R = alcance(Emax, V, Wi, Wf, cT)
+    if Wf >= Wi
+        error('Wf debe ser menor que Wi');
+    end
+    R = (V/cT)*Emax*log(Wi/Wf)*1e-3; % en km
+    %fprintf('Alcance en km: R = %.4f\n', R);
+end

@@ -1,0 +1,31 @@
+function smoke_test_constraints()
+    data = default_data();
+    data.mfuel_req = 1; % [kg] requisito mínimo no nulo
+
+    tol = 1e-6;
+
+    % Caso factible (ajustado a límites)
+    x_ok = [1.5, 4.0, 0.15];
+    [c_ok, ceq_ok] = nonlcon(x_ok, data);
+    assert(all(c_ok <= tol), 'Caso factible: desigualdades no satisfechas.');
+    assert(norm(ceq_ok, inf) <= 1e-3, 'Caso factible: igualdades no satisfechas.');
+
+    % Caso infeasible por b y t/c fuera de rango
+    x_bad_bounds = [1.5, data.bmax + 1, data.t_c_max + 0.05];
+    [c_bad_bounds, ~] = nonlcon(x_bad_bounds, data);
+    assert(c_bad_bounds(1) > 0, 'bmax no se viola como se esperaba.');
+    assert(c_bad_bounds(2) > 0, 't/c max no se viola como se esperaba.');
+
+    % Caso infeasible por t/c mínimo
+    x_bad_tcmin = [1.5, 4.0, data.t_c_min - 0.05];
+    [c_bad_tcmin, ~] = nonlcon(x_bad_tcmin, data);
+    assert(c_bad_tcmin(3) > 0, 't/c min no se viola como se esperaba.');
+
+    % Caso borde en b y t/c
+    x_edge = [2.0, data.bmax, data.t_c_min];
+    [c_edge, ~] = nonlcon(x_edge, data);
+    assert(c_edge(1) <= tol, 'Caso borde: bmax no respeta la convención.');
+    assert(c_edge(3) <= tol, 'Caso borde: t/c min no respeta la convención.');
+
+    fprintf('smoke_test_constraints: OK\n');
+end
